@@ -2,14 +2,8 @@
 
 import os
 from typing import List, Tuple, Optional
-from moviepy.editor import (
-    ImageClip,
-    CompositeVideoClip,
-    concatenate_videoclips,
-    AudioFileClip,
-)
-from moviepy.video.fx.fadein import fadein
-from moviepy.video.fx.fadeout import fadeout
+from moviepy import ImageClip, CompositeVideoClip, concatenate_videoclips, AudioFileClip
+from moviepy.video.fx import FadeIn, FadeOut
 from PIL import Image
 
 from .parser import Section
@@ -51,8 +45,8 @@ def create_section_clip(
     print("  Generating title card...")
     title_img = generate_title_card(section.title, resolution)
     title_img.save(f"temp_title_{section_index}.png")
-    title_clip = ImageClip(f"temp_title_{section_index}.png").set_duration(duration_per_section)
-    title_clip = fadein(fadeout(title_clip, 0.5), 0.5)
+    title_clip = ImageClip(f"temp_title_{section_index}.png", duration=duration_per_section)
+    title_clip = title_clip.with_effects([FadeIn(0.5), FadeOut(0.5)])
     clips.append(title_clip)
 
     # Generate content image
@@ -74,8 +68,8 @@ def create_section_clip(
         content_img = add_text_overlay(content_img, section.content[:200])
 
     content_img.save(f"temp_content_{section_index}.png")
-    content_clip = ImageClip(f"temp_content_{section_index}.png").set_duration(duration_per_section)
-    content_clip = fadein(fadeout(content_clip, 0.5), 0.5)
+    content_clip = ImageClip(f"temp_content_{section_index}.png", duration=duration_per_section)
+    content_clip = content_clip.with_effects([FadeIn(0.5), FadeOut(0.5)])
     clips.append(content_clip)
 
     return clips
@@ -132,10 +126,10 @@ def assemble_video(
             audio = audio.loop(n=n_loops)
 
         # Trim audio to video length
-        audio = audio.subclip(0, final_clip.duration)
+        audio = audio.with_subclip(0, final_clip.duration)
 
         # Mix with existing audio or set as audio
-        final_clip = final_clip.set_audio(audio)
+        final_clip = final_clip.with_audio(audio)
 
     # Write output video
     print(f"\nWriting output video: {output_path}")
